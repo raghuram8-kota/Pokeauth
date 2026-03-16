@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#FFD700">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PokéAuth">
+<meta name="description" content="AI-powered Pokémon card authenticity scanner">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>PokéAuth</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --yellow: #FFD700;
+  --red: #E3350D;
+  --blue: #1A6FB5;
+  --dark: #0A0A14;
+  --darker: #050508;
+  --card-bg: #10101E;
+  --border: #2A2A40;
+  --text: #E8E8F0;
+  --muted: #6868A0;
+  --green: #39D353;
+  --orange: #FF8C00;
+  --safe: env(safe-area-inset-bottom, 0px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--darker);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  padding-bottom: calc(80px + var(--safe));
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.012) 3px, rgba(255,255,255,0.012) 4px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== SCREENS ===== */
+.screen {
+  display: none;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+.screen.active { display: flex; }
+
+/* ===== TOP BAR ===== */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(5,5,8,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0.9rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: calc(0.9rem + env(safe-area-inset-top, 0px));
+}
+
+.topbar-logo {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.9rem;
+  color: var(--yellow);
+  text-shadow: 2px 2px 0 var(--red);
+  letter-spacing: 1px;
+}
+
+.topbar-badge {
+  background: var(--red);
+  border: 2px solid var(--yellow);
+  border-radius: 4px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: var(--yellow);
+  padding: 0.25rem 0.5rem;
+  letter-spacing: 1px;
+}
+
+/* ===== HOME SCREEN ===== */
+#homeScreen .hero {
+  padding: 2rem 1.25rem 1rem;
+  text-align: center;
+}
+
+.pokeball-hero {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 1.5rem;
+  animation: float 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(227,53,13,0.5));
+}
+
+@keyframes float { 0%,100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-10px) rotate(5deg); } }
+
+.hero h1 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(1.1rem, 6vw, 1.6rem);
+  line-height: 1.7;
+  color: var(--yellow);
+  text-shadow: 3px 3px 0 var(--red);
+  margin-bottom: 0.75rem;
+}
+
+.hero p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  max-width: 300px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.action-grid {
+  padding: 1.5rem 1.25rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.action-card {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.action-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.action-card.cam::before { background: radial-gradient(circle at 50% 0%, rgba(227,53,13,0.15), transparent 70%); }
+.action-card.upload::before { background: radial-gradient(circle at 50% 0%, rgba(26,111,181,0.15), transparent 70%); }
+
+.action-card:active { transform: scale(0.96); }
+.action-card:active::before { opacity: 1; }
+
+.action-card .ac-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+
+.action-card h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
+}
+
+.action-card p { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+
+.action-card.cam { border-color: rgba(227,53,13,0.4); }
+.action-card.upload { border-color: rgba(26,111,181,0.4); }
+
+/* Recent scans */
+.section-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: var(--muted);
+  letter-spacing: 3px;
+  padding: 0 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.history-list {
+  padding: 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.history-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  gap: 0.875rem;
+  align-items: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.history-item:active { opacity: 0.8; }
+.history-item .hi-thumb { width: 50px; height: 68px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+.history-item .hi-info { flex: 1; min-width: 0; }
+.history-item .hi-verdict {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  margin-bottom: 0.3rem;
+  letter-spacing: 1px;
+}
+.hi-verdict.authentic { color: var(--green); }
+.hi-verdict.fake { color: var(--red); }
+.hi-verdict.uncertain { color: var(--orange); }
+.history-item .hi-conf { font-size: 0.8rem; color: var(--muted); font-weight: 700; }
+.history-item .hi-time { font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem; }
+.history-item .hi-chevron { color: var(--muted); font-size: 1.1rem; }
+
+.empty-history {
+  text-align: center;
+  padding: 2rem 1.25rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.empty-history .eh-icon { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.4; }
+
+/* ===== CAMERA SCREEN ===== */
+#cameraScreen {
+  background: #000;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+.camera-viewfinder {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+#videoEl {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.card-frame {
+  width: min(75vw, 280px);
+  aspect-ratio: 63/88;
+  border: 3px solid var(--yellow);
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.55), 0 0 30px rgba(255,215,0,0.4);
+  position: relative;
+  animation: frame-pulse 2s ease-in-out infinite;
+}
+
+@keyframes frame-pulse {
+  0%,100% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.55), 0 0 20px rgba(255,215,0,0.3); border-color: rgba(255,215,0,0.8); }
+  50% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.55), 0 0 40px rgba(255,215,0,0.6); border-color: var(--yellow); }
+}
+
+.corner { position: absolute; width: 18px; height: 18px; border-color: var(--yellow); border-style: solid; }
+.corner.tl { top: -3px; left: -3px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+.corner.tr { top: -3px; right: -3px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+.corner.bl { bottom: -3px; left: -3px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+.corner.br { bottom: -3px; right: -3px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+/* Scanning laser */
+.scan-laser {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+  top: 0;
+  animation: laser-scan 2s linear infinite;
+  box-shadow: 0 0 8px var(--yellow);
+}
+
+@keyframes laser-scan { 0% { top: 0%; } 100% { top: 100%; } }
+
+.camera-hint {
+  margin-top: 1.5rem;
+  background: rgba(0,0,0,0.7);
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 99px;
+  padding: 0.5rem 1.25rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.42rem;
+  color: var(--yellow);
+  letter-spacing: 1px;
+  pointer-events: none;
+}
+
+.camera-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  padding: 1.5rem;
+  padding-bottom: calc(1.5rem + var(--safe));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  pointer-events: all;
+}
+
+.cam-btn-close {
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.3);
+  color: white;
+  font-size: 1.4rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cam-btn-close:active { background: rgba(255,255,255,0.3); }
+
+.cam-btn-capture {
+  width: 76px; height: 76px;
+  border-radius: 50%;
+  background: var(--yellow);
+  border: 4px solid white;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 3px var(--yellow);
+  transition: transform 0.1s;
+  font-size: 1.8rem;
+}
+.cam-btn-capture:active { transform: scale(0.92); }
+
+.cam-btn-flip {
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.3);
+  color: white;
+  font-size: 1.4rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cam-btn-flip:active { background: rgba(255,255,255,0.3); }
+
+#captureCanvas { display: none; }
+
+/* ===== ANALYZE SCREEN ===== */
+#analyzeScreen {
+  flex-direction: column;
+}
+
+.analyze-topbar {
+  padding: 1rem 1.25rem;
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(5,5,8,0.95);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.btn-back {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.analyze-topbar h2 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  color: var(--yellow);
+  letter-spacing: 1px;
+}
+
+.card-stage {
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.card-img-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+#stagedCard {
+  max-height: 260px;
+  max-width: 190px;
+  border-radius: 12px;
+  display: block;
+  border: 3px solid var(--border);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  transition: border-color 0.4s;
+}
+
+#stagedCard.authentic { border-color: var(--green); box-shadow: 0 12px 40px rgba(57,211,83,0.25); }
+#stagedCard.fake { border-color: var(--red); box-shadow: 0 12px 40px rgba(227,53,13,0.25); }
+#stagedCard.uncertain { border-color: var(--orange); box-shadow: 0 12px 40px rgba(255,140,0,0.2); }
+
+.scan-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.scan-overlay.active { opacity: 1; }
+.scan-overlay-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+  box-shadow: 0 0 10px var(--yellow);
+  animation: overlay-scan 1.5s linear infinite;
+  top: 0;
+}
+@keyframes overlay-scan { 0% { top: 0%; } 100% { top: 100%; } }
+
+.btn-scan {
+  width: 100%;
+  max-width: 320px;
+  background: var(--yellow);
+  color: var(--darker);
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.65rem;
+  cursor: pointer;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 0 #B8860B;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.btn-scan:active { transform: translateY(2px); box-shadow: 0 2px 0 #B8860B; }
+.btn-scan:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* Loading pill */
+.loading-pill {
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 0.6rem 1.25rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: var(--yellow);
+  letter-spacing: 2px;
+  animation: blink 1s step-end infinite;
+}
+.loading-pill.visible { display: flex; }
+@keyframes blink { 50% { opacity: 0.5; } }
+
+.pb-spinner {
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Error */
+.error-pill {
+  display: none;
+  background: rgba(227,53,13,0.1);
+  border: 1px solid rgba(227,53,13,0.4);
+  border-radius: 10px;
+  padding: 0.85rem 1.1rem;
+  color: #ff7a6e;
+  font-size: 0.8rem;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+}
+.error-pill.visible { display: block; }
+
+/* ===== RESULTS ===== */
+.results-scroll {
+  padding: 0 1.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.verdict-card {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+}
+.verdict-card.authentic { border-color: rgba(57,211,83,0.4); }
+.verdict-card.fake { border-color: rgba(227,53,13,0.4); }
+.verdict-card.uncertain { border-color: rgba(255,140,0,0.4); }
+
+.verdict-top {
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.verdict-card.authentic .verdict-top { background: linear-gradient(135deg, rgba(57,211,83,0.12), rgba(10,10,20,0)); }
+.verdict-card.fake .verdict-top { background: linear-gradient(135deg, rgba(227,53,13,0.12), rgba(10,10,20,0)); }
+.verdict-card.uncertain .verdict-top { background: linear-gradient(135deg, rgba(255,140,0,0.12), rgba(10,10,20,0)); }
+
+.verdict-emoji { font-size: 2.5rem; }
+
+.verdict-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  margin-bottom: 0.3rem;
+}
+.authentic .verdict-title { color: var(--green); }
+.fake .verdict-title { color: var(--red); }
+.uncertain .verdict-title { color: var(--orange); }
+.verdict-desc { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+
+/* Confidence */
+.conf-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+}
+.conf-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.65rem;
+}
+.conf-row span:first-child {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+.conf-row span:last-child { font-size: 1.1rem; font-weight: 900; color: var(--text); }
+.conf-track {
+  height: 10px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.conf-fill {
+  height: 100%;
+  border-radius: 99px;
+  width: 0;
+  transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.authentic .conf-fill { background: linear-gradient(90deg, #1a8c30, var(--green)); }
+.fake .conf-fill { background: linear-gradient(90deg, #8c1a0d, var(--red)); }
+.uncertain .conf-fill { background: linear-gradient(90deg, #8c5a00, var(--orange)); }
+
+/* Findings */
+.findings-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.findings-header {
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: var(--muted);
+  letter-spacing: 3px;
+}
+.finding-row {
+  padding: 0.9rem 1.25rem;
+  display: flex;
+  gap: 0.875rem;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.finding-row:last-child { border-bottom: none; }
+.fr-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 0.1rem; }
+.fr-body strong { display: block; font-size: 0.8rem; color: var(--yellow); margin-bottom: 0.2rem; font-weight: 800; }
+.fr-body span { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+/* Summary */
+.summary-section {
+  background: rgba(255,215,0,0.04);
+  border: 1px solid rgba(255,215,0,0.18);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  background: rgba(5,5,8,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding-bottom: var(--safe);
+  z-index: 50;
+}
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.75rem 0.5rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.nav-item:active { opacity: 0.7; }
+.nav-item .ni-icon { font-size: 1.4rem; }
+.nav-item .ni-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.35rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.nav-item.active .ni-label { color: var(--yellow); }
+.nav-item.active .ni-icon { filter: drop-shadow(0 0 6px rgba(255,215,0,0.6)); }
+
+/* ===== INSTALL PROMPT ===== */
+.install-banner {
+  display: none;
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 70px);
+  left: 1rem; right: 1rem;
+  background: var(--card-bg);
+  border: 2px solid var(--yellow);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  z-index: 300;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.6), 0 0 20px rgba(255,215,0,0.2);
+  animation: slide-down 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.install-banner.visible { display: flex; gap: 0.875rem; align-items: center; }
+@keyframes slide-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.ib-icon { font-size: 2rem; flex-shrink: 0; }
+.ib-text h4 { font-family: 'Press Start 2P', monospace; font-size: 0.5rem; color: var(--yellow); margin-bottom: 0.3rem; }
+.ib-text p { font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+.ib-actions { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
+.btn-install { background: var(--yellow); color: var(--darker); border: none; border-radius: 6px; padding: 0.45rem 0.875rem; font-family: 'Press Start 2P', monospace; font-size: 0.42rem; cursor: pointer; letter-spacing: 1px; }
+.btn-dismiss { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.875rem; font-size: 0.75rem; cursor: pointer; font-family: 'Nunito', sans-serif; font-weight: 700; }
+
+/* ===== TIPS SCREEN ===== */
+#tipsScreen {
+  padding: 1.5rem 1.25rem;
+  gap: 1rem;
+  overflow-y: auto;
+}
+.tips-hero {
+  text-align: center;
+  padding: 1rem 0;
+}
+.tips-hero h2 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.75rem;
+  color: var(--yellow);
+  text-shadow: 2px 2px 0 var(--red);
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+.tips-hero p { color: var(--muted); font-size: 0.85rem; }
+.tip-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.tc-icon { font-size: 1.75rem; flex-shrink: 0; }
+.tc-body h4 { font-size: 0.9rem; font-weight: 900; color: var(--yellow); margin-bottom: 0.3rem; }
+.tc-body p { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+
+/* Upload hidden input */
+#fileInput { display: none; }
+
+/* Utility */
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- INSTALL BANNER -->
+<div class="install-banner" id="installBanner">
+  <div class="ib-icon">⚡</div>
+  <div style="flex:1">
+    <div class="ib-text">
+      <h4>INSTALL APP</h4>
+      <p>Add PokéAuth to your home screen for quick access!</p>
+    </div>
+    <div class="ib-actions">
+      <button class="btn-install" id="installBtn">INSTALL NOW</button>
+      <button class="btn-dismiss" id="dismissBtn">Maybe later</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HOME SCREEN ============ -->
+<div class="screen active" id="homeScreen">
+  <div class="topbar">
+    <span class="topbar-logo">POKÉAUTH</span>
+    <span class="topbar-badge">⚡ AI POWERED</span>
+  </div>
+
+  <div class="hero">
+    <svg class="pokeball-hero" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="46" fill="#0A0A14" stroke="#FFD700" stroke-width="4"/>
+      <path d="M4 50 A46 46 0 0 1 96 50" fill="#E3350D"/>
+      <path d="M4 50 A46 46 0 0 0 96 50" fill="#E8E8F0"/>
+      <rect x="4" y="46" width="92" height="8" fill="#0A0A14"/>
+      <circle cx="50" cy="50" r="14" fill="#0A0A14" stroke="#E8E8F0" stroke-width="3"/>
+      <circle cx="50" cy="50" r="7" fill="#E8E8F0"/>
+    </svg>
+    <h1>SCAN YOUR CARDS</h1>
+    <p>AI-powered authenticity detection for Pokémon TCG</p>
+  </div>
+
+  <div class="action-grid">
+    <div class="action-card cam" onclick="openCamera()">
+      <span class="ac-icon">📸</span>
+      <h3>SCAN CARD</h3>
+      <p>Use your camera to scan a card live</p>
+    </div>
+    <div class="action-card upload" onclick="document.getElementById('fileInput').click()">
+      <span class="ac-icon">🖼️</span>
+      <h3>UPLOAD</h3>
+      <p>Pick a photo from your gallery</p>
+    </div>
+  </div>
+
+  <div class="section-label">RECENT SCANS</div>
+  <div class="history-list" id="historyList">
+    <div class="empty-history">
+      <div class="eh-icon">🃏</div>
+      <p>No scans yet. Start by scanning a card!</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ANALYZE SCREEN ============ -->
+<div class="screen" id="analyzeScreen">
+  <div class="analyze-topbar">
+    <div class="btn-back" onclick="goHome()">←</div>
+    <h2>CARD ANALYSIS</h2>
+  </div>
+
+  <div class="card-stage">
+    <div class="card-img-wrap">
+      <img id="stagedCard" src="" alt="Card to analyze">
+      <div class="scan-overlay" id="scanOverlay">
+        <div class="scan-overlay-line"></div>
+      </div>
+    </div>
+
+    <button class="btn-scan" id="scanBtn" onclick="runAnalysis()">
+      🔍 ANALYZE AUTHENTICITY
+    </button>
+
+    <div class="loading-pill" id="loadingPill">
+      <svg class="pb-spinner" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2a10 10 0 0 1 10 10" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M12 2a10 10 0 0 0-10 10" stroke="#2A2A40" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="12" cy="12" r="3" fill="#FFD700"/>
+      </svg>
+      SCANNING...
+    </div>
+
+    <div class="error-pill" id="errorPill"></div>
+  </div>
+
+  <div class="results-scroll" id="resultsScroll" style="display:none"></div>
+</div>
+
+<!-- ============ CAMERA SCREEN ============ -->
+<div class="screen" id="cameraScreen">
+  <div class="camera-viewfinder">
+    <video id="videoEl" autoplay playsinline muted></video>
+  </div>
+  <div class="camera-overlay">
+    <div class="card-frame">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div class="scan-laser"></div>
+    </div>
+    <div class="camera-hint">ALIGN CARD WITHIN FRAME</div>
+  </div>
+  <div class="camera-controls">
+    <div class="cam-btn-close" onclick="closeCamera()">✕</div>
+    <div class="cam-btn-capture" onclick="captureFrame()">📸</div>
+    <div class="cam-btn-flip" onclick="flipCamera()">🔄</div>
+  </div>
+  <canvas id="captureCanvas"></canvas>
+</div>
+
+<!-- ============ TIPS SCREEN ============ -->
+<div class="screen" id="tipsScreen">
+  <div class="topbar">
+    <span class="topbar-logo">GUIDE</span>
+  </div>
+  <div style="padding: 1.5rem 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;">
+    <div class="tips-hero">
+      <h2>AUTH GUIDE</h2>
+      <p style="color:var(--muted); font-size:0.85rem;">How to spot a fake Pokémon card</p>
+    </div>
+    <div class="tip-card"><div class="tc-icon">💡</div><div class="tc-body"><h4>Light Test</h4><p>Hold the card up to a light source. Authentic cards show a distinct black inner layer. Fakes often let light through uniformly.</p></div></div>
+    <div class="tip-card"><div class="tc-icon">🎨</div><div class="tc-body"><h4>Print Quality</h4><p>Genuine cards have sharp, crisp printing. Counterfeits often appear blurry, pixelated, or have washed-out colors on close inspection.</p></div></div>
+    <div class="tip-card"><div class="tc-icon">✏️</div><div class="tc-body"><h4>Font Accuracy</h4><p>Check the fonts used for HP values, attack names, and card text. Fakes often use slightly wrong fonts, sizes, or spacing.</p></div></div>
+    <div class="tip-card"><div class="tc-icon">✨</div><div class="tc-body"><h4>Holographic Pattern</h4><p>Real holo cards have complex, multi-layered patterns that shift with light. Fake foil is usually flat, uniform, and doesn't have the same depth.</p></div></div>
+    <div class="tip-card"><div class="tc-icon">📐</div><div class="tc-body"><h4>Card Weight & Feel</h4><p>Genuine cards measure 63×88mm with a specific weight and texture. Fakes may feel too light, too thick, too glossy, or too rough.</p></div></div>
+    <div class="tip-card"><div class="tc-icon">🔢</div><div class="tc-body"><h4>Set Symbol & Rarity</h4><p>Each card's set symbol should match the official set it belongs to. Cross-reference with the Pokémon card database to verify.</p></div></div>
+    <div class="tip-card"><div class="tc-icon">🔵</div><div class="tc-body"><h4>Card Back</h4><p>The Pokémon card back has a very specific blue color and design. Fakes often have the wrong shade of blue or slightly off proportions.</p></div></div>
+    <div class="tip-card"><div class="tc-icon">💰</div><div class="tc-body"><h4>Price Red Flags</h4><p>If a rare card is priced far below market value, be suspicious. Always buy from reputable sellers with authentication guarantees for high-value cards.</p></div></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" id="bottomNav">
+  <div class="nav-item active" id="navHome" onclick="switchTab('home')">
+    <span class="ni-icon">🏠</span>
+    <span class="ni-label">HOME</span>
+  </div>
+  <div class="nav-item" id="navScan" onclick="openCamera()">
+    <span class="ni-icon">📸</span>
+    <span class="ni-label">SCAN</span>
+  </div>
+  <div class="nav-item" id="navTips" onclick="switchTab('tips')">
+    <span class="ni-icon">📖</span>
+    <span class="ni-label">GUIDE</span>
+  </div>
+</nav>
+
+<input type="file" id="fileInput" accept="image/*" onchange="handleFileUpload(event)">
+
+<script>
+// ===== STATE =====
+let currentImageBase64 = null;
+let currentFileType = 'image/jpeg';
+let videoStream = null;
+let facingMode = 'environment';
+let scanHistory = JSON.parse(localStorage.getItem('pokeauth_history') || '[]');
+let deferredInstallPrompt = null;
+
+// ===== PWA INSTALL =====
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  if (!localStorage.getItem('pokeauth_install_dismissed')) {
+    setTimeout(() => document.getElementById('installBanner').classList.add('visible'), 2000);
+  }
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  document.getElementById('installBanner').classList.remove('visible');
+});
+
+document.getElementById('dismissBtn').addEventListener('click', () => {
+  localStorage.setItem('pokeauth_install_dismissed', '1');
+  document.getElementById('installBanner').classList.remove('visible');
+});
+
+// ===== SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+// ===== NAV =====
+function switchTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('bottomNav').style.display = 'flex';
+
+  if (tab === 'home') {
+    document.getElementById('homeScreen').classList.add('active');
+    document.getElementById('navHome').classList.add('active');
+    renderHistory();
+  } else if (tab === 'tips') {
+    document.getElementById('tipsScreen').classList.add('active');
+    document.getElementById('navTips').classList.add('active');
+  }
+}
+
+function goHome() {
+  stopCamera();
+  switchTab('home');
+}
+
+// ===== CAMERA =====
+async function openCamera() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('cameraScreen').classList.add('active');
+  document.getElementById('bottomNav').style.display = 'none';
+  await startCamera();
+}
+
+async function startCamera() {
+  stopCamera();
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false
+    });
+    document.getElementById('videoEl').srcObject = videoStream;
+  } catch (err) {
+    alert('Camera access denied. Please allow camera permissions and try again.');
+    closeCamera();
+  }
+}
+
+function stopCamera() {
+  if (videoStream) {
+    videoStream.getTracks().forEach(t => t.stop());
+    videoStream = null;
+  }
+}
+
+function closeCamera() {
+  stopCamera();
+  document.getElementById('bottomNav').style.display = 'flex';
+  switchTab('home');
+}
+
+function flipCamera() {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  startCamera();
+}
+
+function captureFrame() {
+  const video = document.getElementById('videoEl');
+  const canvas = document.getElementById('captureCanvas');
+  
+  // Find the card frame area
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const displayW = video.offsetWidth, displayH = video.offsetHeight;
+  const scaleX = vw / displayW, scaleY = vh / displayH;
+
+  // Card frame: 75vw wide, aspect 63:88, centered
+  const frameW = Math.min(displayW * 0.75, 280);
+  const frameH = frameW * (88 / 63);
+  const frameX = (displayW - frameW) / 2;
+  const frameY = (displayH - frameH) / 2;
+
+  // Map to video coords
+  const srcX = frameX * scaleX;
+  const srcY = frameY * scaleY;
+  const srcW = frameW * scaleX;
+  const srcH = frameH * scaleY;
+
+  canvas.width = srcW;
+  canvas.height = srcH;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+
+  currentImageBase64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
+  currentFileType = 'image/jpeg';
+
+  stopCamera();
+  showAnalyzeScreen(canvas.toDataURL('image/jpeg', 0.92));
+}
+
+// ===== FILE UPLOAD =====
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  currentFileType = file.type;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    currentImageBase64 = ev.target.result.split(',')[1];
+    showAnalyzeScreen(ev.target.result);
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+// ===== ANALYZE SCREEN =====
+function showAnalyzeScreen(dataUrl) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('analyzeScreen').classList.add('active');
+  document.getElementById('bottomNav').style.display = 'none';
+
+  const img = document.getElementById('stagedCard');
+  img.src = dataUrl;
+  img.className = '';
+  document.getElementById('scanBtn').disabled = false;
+  document.getElementById('loadingPill').classList.remove('visible');
+  document.getElementById('errorPill').classList.remove('visible');
+  document.getElementById('resultsScroll').style.display = 'none';
+  document.getElementById('scanOverlay').classList.remove('active');
+}
+
+// ===== AI ANALYSIS =====
+async function runAnalysis() {
+  if (!currentImageBase64) return;
+
+  document.getElementById('scanBtn').disabled = true;
+  document.getElementById('loadingPill').classList.add('visible');
+  document.getElementById('errorPill').classList.remove('visible');
+  document.getElementById('resultsScroll').style.display = 'none';
+  document.getElementById('scanOverlay').classList.add('active');
+
+  const prompt = `You are an expert Pokémon TCG card authenticator. Analyze this card image for authenticity.
+
+Evaluate these aspects:
+1. Print quality & sharpness
+2. Font accuracy (name, HP, attacks, flavor text)
+3. Card border & layout proportions
+4. Color accuracy & saturation
+5. Holographic/foil quality (if applicable)
+6. Set symbol and rarity symbol correctness
+7. Any obvious counterfeit indicators
+
+Respond ONLY with valid JSON (no markdown, no preamble, no trailing text):
+{
+  "verdict": "AUTHENTIC" | "FAKE" | "UNCERTAIN",
+  "confidence": <integer 0-100>,
+  "findings": [
+    { "category": "Category Name", "status": "good" | "warning" | "bad", "detail": "Specific observation" }
+  ],
+  "summary": "2-3 sentence overall assessment."
+}`;
+
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: [
+          { type: "image", source: { type: "base64", media_type: currentFileType, data: currentImageBase64 } },
+          { type: "text", text: prompt }
+        ]}]
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content.map(i => i.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(clean);
+    renderResults(result);
+    saveHistory(result);
+  } catch (err) {
+    document.getElementById('errorPill').textContent = '⚠️ Analysis failed. Check your connection and try again.';
+    document.getElementById('errorPill').classList.add('visible');
+    document.getElementById('scanBtn').disabled = false;
+  } finally {
+    document.getElementById('loadingPill').classList.remove('visible');
+    document.getElementById('scanOverlay').classList.remove('active');
+  }
+}
+
+function renderResults(result) {
+  const vc = result.verdict === 'AUTHENTIC' ? 'authentic' : result.verdict === 'FAKE' ? 'fake' : 'uncertain';
+  const icon = vc === 'authentic' ? '✅' : vc === 'fake' ? '🚨' : '⚠️';
+  const title = vc === 'authentic' ? 'AUTHENTIC CARD' : vc === 'fake' ? 'COUNTERFEIT!' : 'UNCERTAIN';
+  const desc = vc === 'authentic' ? 'This card appears genuine' : vc === 'fake' ? 'Fake indicators detected' : 'Could not determine — verify manually';
+
+  document.getElementById('stagedCard').className = vc;
+
+  const findings = (result.findings || []).map(f => {
+    const fi = f.status === 'good' ? '✅' : f.status === 'warning' ? '⚠️' : '❌';
+    return `<div class="finding-row"><div class="fr-icon">${fi}</div><div class="fr-body"><strong>${f.category}</strong><span>${f.detail}</span></div></div>`;
+  }).join('');
+
+  const html = `
+    <div class="verdict-card ${vc}">
+      <div class="verdict-top">
+        <div class="verdict-emoji">${icon}</div>
+        <div>
+          <div class="verdict-title">${title}</div>
+          <div class="verdict-desc">${desc}</div>
+        </div>
+      </div>
+    </div>
+    <div class="conf-section ${vc}">
+      <div class="conf-row"><span>CONFIDENCE</span><span>${result.confidence}%</span></div>
+      <div class="conf-track"><div class="conf-fill" id="confFill"></div></div>
+    </div>
+    <div class="findings-section">
+      <div class="findings-header">🔬 DETAILED FINDINGS</div>
+      ${findings}
+    </div>
+    <div class="summary-section">${result.summary}</div>
+    <button class="btn-scan" onclick="goHome()" style="background:var(--card-bg);color:var(--text);border:2px solid var(--border);box-shadow:none;">← SCAN ANOTHER CARD</button>
+  `;
+
+  const rs = document.getElementById('resultsScroll');
+  rs.innerHTML = html;
+  rs.style.display = 'flex';
+  rs.style.flexDirection = 'column';
+  rs.style.gap = '1rem';
+  rs.style.padding = '0 1.25rem 2rem';
+
+  setTimeout(() => {
+    const fill = document.getElementById('confFill');
+    if (fill) fill.style.width = `${result.confidence}%`;
+  }, 100);
+
+  rs.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ===== HISTORY =====
+function saveHistory(result) {
+  const vc = result.verdict === 'AUTHENTIC' ? 'authentic' : result.verdict === 'FAKE' ? 'fake' : 'uncertain';
+  const entry = {
+    id: Date.now(),
+    verdict: vc,
+    confidence: result.confidence,
+    summary: result.summary,
+    thumb: document.getElementById('stagedCard').src,
+    time: new Date().toLocaleString()
+  };
+  scanHistory.unshift(entry);
+  if (scanHistory.length > 20) scanHistory = scanHistory.slice(0, 20);
+  try { localStorage.setItem('pokeauth_history', JSON.stringify(scanHistory)); } catch(e) {}
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!scanHistory.length) {
+    list.innerHTML = '<div class="empty-history"><div class="eh-icon">🃏</div><p>No scans yet. Start by scanning a card!</p></div>';
+    return;
+  }
+  list.innerHTML = scanHistory.slice(0, 5).map(entry => `
+    <div class="history-item">
+      <img class="hi-thumb" src="${entry.thumb}" alt="Card">
+      <div class="hi-info">
+        <div class="hi-verdict ${entry.verdict}">${entry.verdict === 'authentic' ? '✅ AUTHENTIC' : entry.verdict === 'fake' ? '🚨 FAKE' : '⚠️ UNCERTAIN'}</div>
+        <div class="hi-conf">${entry.confidence}% confidence</div>
+        <div class="hi-time">${entry.time}</div>
+      </div>
+      <span class="hi-chevron">›</span>
+    </div>
+  `).join('');
+}
+
+// Init
+renderHistory();
+</script>
+</body>
+</html>
