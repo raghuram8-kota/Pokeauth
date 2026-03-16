@@ -99,6 +99,19 @@ body::before {
   letter-spacing: 1px;
 }
 
+.topbar-install-btn {
+  background: var(--yellow);
+  color: var(--darker);
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.7rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.38rem;
+  cursor: pointer;
+  letter-spacing: 1px;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
 /* ===== HOME SCREEN ===== */
 #homeScreen .hero {
   padding: 2rem 1.25rem 1rem;
@@ -231,11 +244,11 @@ body::before {
 
 .empty-history {
   text-align: center;
-  padding: 2rem 1.25rem;
+  padding: 0.75rem 1.25rem 1.5rem;
   color: var(--muted);
   font-size: 0.85rem;
 }
-.empty-history .eh-icon { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.4; }
+.empty-history .eh-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.4; display: block; }
 
 /* ===== CAMERA SCREEN ===== */
 #cameraScreen {
@@ -957,7 +970,10 @@ body::before {
 <div class="screen active" id="homeScreen">
   <div class="topbar">
     <span class="topbar-logo">POKÉAUTH</span>
-    <span class="topbar-badge">⚡ AI POWERED</span>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <button class="topbar-install-btn" id="topbarInstallBtn" style="display:none" onclick="triggerInstall()">📲 Install</button>
+      <span class="topbar-badge">⚡ AI</span>
+    </div>
   </div>
 
   <div class="hero">
@@ -1217,42 +1233,52 @@ document.querySelector('.topbar-logo')?.addEventListener('touchstart', () => {
 document.querySelector('.topbar-logo')?.addEventListener('touchend', () => clearTimeout(logoHoldTimer));
 
 // ===== PWA INSTALL =====
-// Android / Chrome — native prompt
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  if (!localStorage.getItem('pokeauth_install_dismissed')) {
-    setTimeout(() => document.getElementById('installBanner').classList.add('visible'), 2500);
-  }
-});
-
-document.getElementById('installBtn').addEventListener('click', async () => {
-  if (!deferredInstallPrompt) return;
-  deferredInstallPrompt.prompt();
-  const { outcome } = await deferredInstallPrompt.userChoice;
-  deferredInstallPrompt = null;
-  document.getElementById('installBanner').classList.remove('visible');
-});
-
-document.getElementById('dismissBtn').addEventListener('click', () => {
-  localStorage.setItem('pokeauth_install_dismissed', '1');
-  document.getElementById('installBanner').classList.remove('visible');
-});
-
-// iOS Safari — manual instructions banner
 function isIos() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window.MSStream);
 }
 function isInStandaloneMode() {
-  return ('standalone' in window.navigator) && window.navigator.standalone;
+  return ('standalone' in window.navigator) && window.navigator.standalone
+    || window.matchMedia('(display-mode: standalone)').matches;
 }
 function dismissIosBanner() {
   localStorage.setItem('pokeauth_ios_dismissed', '1');
   document.getElementById('iosInstallBanner').classList.remove('visible');
 }
 
-if (isIos() && !isInStandaloneMode() && !localStorage.getItem('pokeauth_ios_dismissed')) {
-  setTimeout(() => document.getElementById('iosInstallBanner').classList.add('visible'), 3000);
+async function triggerInstall() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    document.getElementById('topbarInstallBtn').style.display = 'none';
+    document.getElementById('installBanner').classList.remove('visible');
+  } else if (isIos()) {
+    document.getElementById('iosInstallBanner').classList.add('visible');
+  }
+}
+
+// Android/Chrome: native beforeinstallprompt
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('topbarInstallBtn').style.display = 'block';
+  if (!localStorage.getItem('pokeauth_install_dismissed')) {
+    setTimeout(() => document.getElementById('installBanner').classList.add('visible'), 2500);
+  }
+});
+
+document.getElementById('installBtn').addEventListener('click', () => triggerInstall());
+document.getElementById('dismissBtn').addEventListener('click', () => {
+  localStorage.setItem('pokeauth_install_dismissed', '1');
+  document.getElementById('installBanner').classList.remove('visible');
+});
+
+// iOS Safari: show topbar button + auto-banner
+if (isIos() && !isInStandaloneMode()) {
+  document.getElementById('topbarInstallBtn').style.display = 'block';
+  if (!localStorage.getItem('pokeauth_ios_dismissed')) {
+    setTimeout(() => document.getElementById('iosInstallBanner').classList.add('visible'), 3000);
+  }
 }
 
 // ===== SERVICE WORKER =====
