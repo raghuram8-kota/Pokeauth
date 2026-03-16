@@ -1465,26 +1465,37 @@ Respond ONLY with valid JSON (no markdown, no preamble, no trailing text):
       })
     });
 
-    if (resp.status === 401) {
-      throw new Error('invalid_key');
-    }
-    if (!resp.ok) {
-      throw new Error(`api_error_${resp.status}`);
-    }
+    if (resp.status === 401) throw new Error('invalid_key');
 
     const data = await resp.json();
+    console.log('API response:', JSON.stringify(data).substring(0, 300));
+
+    if (!resp.ok) {
+      const errMsg = data?.error?.message || `HTTP ${resp.status}`;
+      throw new Error(`api_error: ${errMsg}`);
+    }
+
+    if (data.error) throw new Error(`api_error: ${data.error.message}`);
+
     const raw = data.content.map(i => i.text || '').join('');
     const clean = raw.replace(/```json|```/g, '').trim();
     const result = JSON.parse(clean);
     renderResults(result);
     saveHistory(result);
   } catch (err) {
+    console.error('Analysis error:', err);
     if (err.message === 'invalid_key') {
       document.getElementById('errorPill').textContent = '🔑 Invalid API key. Long-press the logo to reset it.';
       localStorage.removeItem('pokeauth_api_key');
       apiKey = '';
+    } else if (err.message.startsWith('api_error:')) {
+      document.getElementById('errorPill').textContent = `⚠️ ${err.message}`;
+    } else if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      document.getElementById('errorPill').textContent = '🌐 Network error — are you online? (CORS may be blocking the request)';
+    } else if (err.name === 'SyntaxError') {
+      document.getElementById('errorPill').textContent = '⚠️ Unexpected response from AI. Try again.';
     } else {
-      document.getElementById('errorPill').textContent = '⚠️ Analysis failed. Check your connection and try again.';
+      document.getElementById('errorPill').textContent = `⚠️ Error: ${err.message}`;
     }
     document.getElementById('errorPill').classList.add('visible');
     document.getElementById('scanBtn').disabled = false;
