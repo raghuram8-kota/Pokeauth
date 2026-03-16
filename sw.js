@@ -1,8 +1,8 @@
 const CACHE_NAME = 'pokeauth-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
+  '/pokeauth-pwa/',
+  '/pokeauth-pwa/index.html',
+  '/pokeauth-pwa/manifest.json',
   'https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800;900&display=swap'
 ];
 
