@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pokeauth-v1';
+const CACHE_NAME = 'pokeauth-v2';
 const ASSETS = [
   '/pokeauth-pwa/',
   '/pokeauth-pwa/index.html',
