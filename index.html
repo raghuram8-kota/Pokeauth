@@ -725,6 +725,215 @@ body::before {
 
 /* Utility */
 .hidden { display: none !important; }
+
+/* ===== API KEY SETUP SCREEN ===== */
+#setupScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--darker);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2rem 1.5rem 3rem;
+  text-align: center;
+  overflow-y: auto;
+}
+#setupScreen.hidden { display: none; }
+
+.setup-pokeball {
+  width: 70px; height: 70px;
+  margin: 0 auto 1.5rem;
+  animation: float 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 16px rgba(227,53,13,0.5));
+}
+.setup-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.85rem;
+  color: var(--yellow);
+  text-shadow: 2px 2px 0 var(--red);
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+}
+.setup-desc {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  max-width: 320px;
+  margin-bottom: 2rem;
+}
+.setup-desc a { color: var(--yellow); text-decoration: none; }
+
+.api-input-wrap {
+  width: 100%;
+  max-width: 360px;
+  position: relative;
+  margin-bottom: 1rem;
+}
+.api-input {
+  width: 100%;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 3rem 1rem 1.25rem;
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.api-input:focus { border-color: var(--yellow); }
+.api-input::placeholder { color: var(--muted); letter-spacing: 0; font-weight: 600; }
+.api-toggle-vis {
+  position: absolute;
+  right: 1rem; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  color: var(--muted); cursor: pointer;
+  font-size: 1.1rem; padding: 0.25rem;
+}
+
+.btn-setup-go {
+  width: 100%;
+  max-width: 360px;
+  background: var(--yellow);
+  color: var(--darker);
+  border: none;
+  border-radius: 12px;
+  padding: 1rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #B8860B;
+  transition: all 0.15s;
+  margin-bottom: 1rem;
+}
+.btn-setup-go:active { transform: translateY(2px); box-shadow: 0 2px 0 #B8860B; }
+
+.setup-note {
+  font-size: 0.75rem;
+  color: var(--muted);
+  max-width: 320px;
+  line-height: 1.5;
+}
+.setup-error {
+  color: #ff7a6e;
+  font-size: 0.8rem;
+  margin-bottom: 0.75rem;
+  min-height: 1.2em;
+}
+
+/* Steps */
+.setup-steps {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.setup-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 0.85rem 1rem;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  transition: background 0.2s;
+}
+.setup-step:last-child { border-bottom: none; }
+.step-num {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2px solid var(--yellow);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.45rem;
+  color: var(--yellow);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+.step-body { flex: 1; }
+.step-body strong {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 0.2rem;
+}
+.step-body span {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.step-body a {
+  color: var(--yellow);
+  text-decoration: none;
+  font-weight: 700;
+}
+.step-body code {
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.78rem;
+  color: var(--green);
+  font-family: monospace;
+}
+
+/* Divider */
+.setup-divider {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.setup-divider::before,
+.setup-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.setup-divider span {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+/* ===== iOS INSTALL INSTRUCTIONS ===== */
+.ios-install-banner {
+  display: none;
+  position: fixed;
+  bottom: calc(80px + var(--safe) + 0.75rem);
+  left: 1rem; right: 1rem;
+  background: var(--card-bg);
+  border: 2px solid var(--yellow);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  z-index: 300;
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.6), 0 0 20px rgba(255,215,0,0.15);
+  animation: slide-up-banner 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ios-install-banner.visible { display: flex; gap: 0.875rem; align-items: flex-start; }
+@keyframes slide-up-banner { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.ios-install-banner .ib-icon { font-size: 1.8rem; flex-shrink: 0; }
+.ios-install-banner h4 { font-family: 'Press Start 2P', monospace; font-size: 0.48rem; color: var(--yellow); margin-bottom: 0.4rem; letter-spacing: 1px; }
+.ios-install-banner p { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+.ios-install-banner strong { color: var(--text); }
+.ios-close { background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; flex-shrink: 0; margin-left: auto; padding: 0 0 0 0.5rem; align-self: flex-start; }
 </style>
 </head>
 <body>
@@ -882,6 +1091,73 @@ body::before {
 
 <input type="file" id="fileInput" accept="image/*" onchange="handleFileUpload(event)">
 
+<!-- ============ API KEY SETUP SCREEN ============ -->
+<div id="setupScreen">
+  <svg class="setup-pokeball" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="46" fill="#0A0A14" stroke="#FFD700" stroke-width="4"/>
+    <path d="M4 50 A46 46 0 0 1 96 50" fill="#E3350D"/>
+    <path d="M4 50 A46 46 0 0 0 96 50" fill="#E8E8F0"/>
+    <rect x="4" y="46" width="92" height="8" fill="#0A0A14"/>
+    <circle cx="50" cy="50" r="14" fill="#0A0A14" stroke="#E8E8F0" stroke-width="3"/>
+    <circle cx="50" cy="50" r="7" fill="#E8E8F0"/>
+  </svg>
+
+  <div class="setup-title">POKÉAUTH</div>
+  <p class="setup-desc">This app uses AI to detect fake Pokémon cards.<br>You need a free Anthropic API key to use it.</p>
+
+  <!-- Step by step instructions -->
+  <div class="setup-steps">
+    <div class="setup-step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <strong>Create a free account</strong>
+        <span>Visit <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> and sign up — it's free.</span>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <strong>Go to API Keys</strong>
+        <span>In the left sidebar, click <code>API Keys</code>.</span>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <strong>Create a new key</strong>
+        <span>Click <code>+ Create Key</code>, give it any name, then copy the key shown.</span>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <strong>Paste it below</strong>
+        <span>Your key starts with <code>sk-ant-</code>. It's only stored on your device.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="setup-divider"><span>PASTE YOUR KEY BELOW</span></div>
+
+  <div class="api-input-wrap">
+    <input class="api-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
+    <button class="api-toggle-vis" onclick="toggleKeyVisibility()" id="visBtn">👁️</button>
+  </div>
+  <div class="setup-error" id="setupError"></div>
+  <button class="btn-setup-go" onclick="saveApiKey()">⚡ START SCANNING</button>
+  <p class="setup-note">🔒 Your key is saved locally on this device only and sent directly to Anthropic — never to anyone else.</p>
+</div>
+
+<!-- iOS Install Banner -->
+<div class="ios-install-banner" id="iosInstallBanner">
+  <div class="ib-icon">📲</div>
+  <div style="flex:1">
+    <h4>INSTALL APP</h4>
+    <p>Tap <strong>Share</strong> (□↑) then <strong>"Add to Home Screen"</strong> to install PokéAuth.</p>
+  </div>
+  <button class="ios-close" onclick="dismissIosBanner()">✕</button>
+</div>
+
 <script>
 // ===== STATE =====
 let currentImageBase64 = null;
@@ -890,13 +1166,63 @@ let videoStream = null;
 let facingMode = 'environment';
 let scanHistory = JSON.parse(localStorage.getItem('pokeauth_history') || '[]');
 let deferredInstallPrompt = null;
+let apiKey = localStorage.getItem('pokeauth_api_key') || '';
+
+// ===== API KEY SETUP =====
+function initSetup() {
+  if (apiKey && apiKey.startsWith('sk-')) {
+    document.getElementById('setupScreen').classList.add('hidden');
+  } else {
+    document.getElementById('setupScreen').classList.remove('hidden');
+  }
+}
+
+function toggleKeyVisibility() {
+  const inp = document.getElementById('apiKeyInput');
+  const btn = document.getElementById('visBtn');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁️'; }
+}
+
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  const err = document.getElementById('setupError');
+  if (!val) { err.textContent = 'Please enter your API key.'; return; }
+  if (!val.startsWith('sk-')) { err.textContent = 'Key should start with "sk-". Check and try again.'; return; }
+  err.textContent = '';
+  apiKey = val;
+  localStorage.setItem('pokeauth_api_key', val);
+  document.getElementById('setupScreen').classList.add('hidden');
+  renderHistory();
+}
+
+// Allow Enter key on input
+document.getElementById('apiKeyInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') saveApiKey();
+});
+
+// Settings: clear API key (accessible via long-press on logo)
+let logoHoldTimer;
+document.querySelector('.topbar-logo')?.addEventListener('touchstart', () => {
+  logoHoldTimer = setTimeout(() => {
+    if (confirm('Reset API key?')) {
+      localStorage.removeItem('pokeauth_api_key');
+      apiKey = '';
+      document.getElementById('apiKeyInput').value = '';
+      document.getElementById('setupError').textContent = '';
+      document.getElementById('setupScreen').classList.remove('hidden');
+    }
+  }, 1500);
+});
+document.querySelector('.topbar-logo')?.addEventListener('touchend', () => clearTimeout(logoHoldTimer));
 
 // ===== PWA INSTALL =====
+// Android / Chrome — native prompt
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredInstallPrompt = e;
   if (!localStorage.getItem('pokeauth_install_dismissed')) {
-    setTimeout(() => document.getElementById('installBanner').classList.add('visible'), 2000);
+    setTimeout(() => document.getElementById('installBanner').classList.add('visible'), 2500);
   }
 });
 
@@ -912,6 +1238,22 @@ document.getElementById('dismissBtn').addEventListener('click', () => {
   localStorage.setItem('pokeauth_install_dismissed', '1');
   document.getElementById('installBanner').classList.remove('visible');
 });
+
+// iOS Safari — manual instructions banner
+function isIos() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+function isInStandaloneMode() {
+  return ('standalone' in window.navigator) && window.navigator.standalone;
+}
+function dismissIosBanner() {
+  localStorage.setItem('pokeauth_ios_dismissed', '1');
+  document.getElementById('iosInstallBanner').classList.remove('visible');
+}
+
+if (isIos() && !isInStandaloneMode() && !localStorage.getItem('pokeauth_ios_dismissed')) {
+  setTimeout(() => document.getElementById('iosInstallBanner').classList.add('visible'), 3000);
+}
 
 // ===== SERVICE WORKER =====
 if ('serviceWorker' in navigator) {
@@ -984,19 +1326,16 @@ function flipCamera() {
 function captureFrame() {
   const video = document.getElementById('videoEl');
   const canvas = document.getElementById('captureCanvas');
-  
-  // Find the card frame area
+
   const vw = video.videoWidth, vh = video.videoHeight;
   const displayW = video.offsetWidth, displayH = video.offsetHeight;
   const scaleX = vw / displayW, scaleY = vh / displayH;
 
-  // Card frame: 75vw wide, aspect 63:88, centered
   const frameW = Math.min(displayW * 0.75, 280);
   const frameH = frameW * (88 / 63);
   const frameX = (displayW - frameW) / 2;
   const frameY = (displayH - frameH) / 2;
 
-  // Map to video coords
   const srcX = frameX * scaleX;
   const srcY = frameY * scaleY;
   const srcW = frameW * scaleX;
@@ -1048,6 +1387,12 @@ function showAnalyzeScreen(dataUrl) {
 async function runAnalysis() {
   if (!currentImageBase64) return;
 
+  // Check API key
+  if (!apiKey || !apiKey.startsWith('sk-')) {
+    document.getElementById('setupScreen').classList.remove('hidden');
+    return;
+  }
+
   document.getElementById('scanBtn').disabled = true;
   document.getElementById('loadingPill').classList.add('visible');
   document.getElementById('errorPill').classList.remove('visible');
@@ -1078,7 +1423,12 @@ Respond ONLY with valid JSON (no markdown, no preamble, no trailing text):
   try {
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 1000,
@@ -1088,6 +1438,14 @@ Respond ONLY with valid JSON (no markdown, no preamble, no trailing text):
         ]}]
       })
     });
+
+    if (resp.status === 401) {
+      throw new Error('invalid_key');
+    }
+    if (!resp.ok) {
+      throw new Error(`api_error_${resp.status}`);
+    }
+
     const data = await resp.json();
     const raw = data.content.map(i => i.text || '').join('');
     const clean = raw.replace(/```json|```/g, '').trim();
@@ -1095,7 +1453,13 @@ Respond ONLY with valid JSON (no markdown, no preamble, no trailing text):
     renderResults(result);
     saveHistory(result);
   } catch (err) {
-    document.getElementById('errorPill').textContent = '⚠️ Analysis failed. Check your connection and try again.';
+    if (err.message === 'invalid_key') {
+      document.getElementById('errorPill').textContent = '🔑 Invalid API key. Long-press the logo to reset it.';
+      localStorage.removeItem('pokeauth_api_key');
+      apiKey = '';
+    } else {
+      document.getElementById('errorPill').textContent = '⚠️ Analysis failed. Check your connection and try again.';
+    }
     document.getElementById('errorPill').classList.add('visible');
     document.getElementById('scanBtn').disabled = false;
   } finally {
@@ -1190,6 +1554,7 @@ function renderHistory() {
 }
 
 // Init
+initSetup();
 renderHistory();
 </script>
 </body>
